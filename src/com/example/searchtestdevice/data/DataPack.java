@@ -42,6 +42,11 @@ public class DataPack {
     public static final String PACKET_CHK_RESULT_BAD = "BAD";
     
     public static final String DEVICE_PASSWORD = "123456";
+    
+    //在链接建立的过程中
+    public static final int DEVICE_FIND = 0;
+    public static final int DEVICE_CONNECTED = 1;
+    public static final int DEVICE_NOT_CONNECTED = 2;
 	/**
      * 打包响应报文
      * 协议：DATA_HEAD + packType(1) + data(n)

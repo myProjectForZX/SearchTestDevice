@@ -26,8 +26,6 @@ import android.os.Message;
 import android.provider.ContactsContract.Contacts.Data;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -45,8 +43,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	private Context mContext;
 	private ContentResolver mContentResolver;
 	private ArrayList mContactList;
-	private boolean open = false;
-	DeviceWaitingSearch deviceWaitingSearch;
+	private DeviceWaitingSearch deviceWaitingSearch;
 	private Handler mHandler = new MyHander();
 	
 	@Override
@@ -115,6 +112,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		getEthernetIp();//获得以太网ip
 		getVoice();//获得系统音量
 	}
+	
 	/**
 	 * 1.修改联系人的姓名和电话号码-调试ok，此修改只是单个联系人的姓名和号码的方法
 	 * 2.修改系统时间-调试ok
@@ -129,9 +127,11 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		setEthernetIp();
 		setVoice();
 	}
+	
 	private void setEthernetIp() {
 		
 	}
+	
 	//设置系统时间，年月日时分秒，需要root权限才可以，如20170304.205000
 	public static void setSystemTime(final Context cxt, String datetimes) {  
 		// yyyyMMdd.HHmmss】  
@@ -156,6 +156,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 			Toast.makeText(cxt, "请获取Root权限", Toast.LENGTH_SHORT).show();  
 		}  
 	}
+	
 	private void setVoice() {
 		Log.i("TAG", "setVoice");
 		AudioManager mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -180,6 +181,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		int alarmVolumeValue = 0;
 		mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,alarmVolumeValue, AudioManager.FLAG_PLAY_SOUND | AudioManager.FLAG_SHOW_UI);
 	}
+	
 	int ZH=0;
 	int EN=1;
 	private void setLanguage(int language) {
@@ -202,6 +204,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 			e.printStackTrace();
 		}
 	}
+	
 	private void updataContactData() {
 		int id = 1;
 		String phone = "2222";
@@ -214,6 +217,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		nameValue.put("data1", name);
 		mContentResolver.update(dataUri, nameValue, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/name",id+""});
 	}
+	
 	private void getVoice() {
 		Log.i("TAG", "getvoice");
 		AudioManager mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -242,16 +246,19 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		current = mAudioManager.getStreamVolume( AudioManager.STREAM_ALARM );
 		Log.i("TAG", "提示声音音量max="+max+",current="+current);
 	}
+	
 	//以太网ip地址需要硬件接入以太网才可以测试
 	private void getEthernetIp() {
 		String macAddress=InterAddressUtil.getMacAddress();
 		Log.i("TAG", "macAddress="+macAddress);
 	}
+	
 	private void getlanguage() {
 		Locale locale = getResources().getConfiguration().locale;
 		String language = locale.getLanguage();
 		Log.i("TAG", "getlanguage-language="+language);
 	}
+	
 	private void getSystemTime() {
 		Calendar c = Calendar.getInstance();
 		int year = c.get(Calendar.YEAR);
@@ -276,6 +283,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		Log.i("TAG", "sb="+sb);
 
 	}
+	
 	//小于10的数字加0
 	private String getStr(int value) {
 		String valueStr;
@@ -286,6 +294,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		}
 		return valueStr;
 	}
+	
 	private void getContactList() {
 		Uri uri = Uri.parse("content://com.android.contacts/contacts"); //访问raw_contacts表
 		Cursor cursorContact = mContentResolver.query(uri, new String[]{Data._ID}, null, null, null);  

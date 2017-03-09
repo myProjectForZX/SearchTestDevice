@@ -21,7 +21,7 @@
     <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
     	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-sdk
-        android:minSdkVersion="17"
+        android:minSdkVersion="14"
         android:targetSdkVersion="21" />
 
     <application
