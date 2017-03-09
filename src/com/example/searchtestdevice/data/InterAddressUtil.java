@@ -1,4 +1,4 @@
-package com.example.searchtestdevice.ethernet;
+package com.example.searchtestdevice.data;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

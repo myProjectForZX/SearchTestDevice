@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 
-import com.example.searchtestdevice.contact.ContactBean;
-import com.example.searchtestdevice.ethernet.InterAddressUtil;
+import com.example.searchtestdevice.data.ContactBean;
+import com.example.searchtestdevice.data.InterAddressUtil;
 
 
 import android.support.v7.app.ActionBarActivity;
@@ -21,6 +21,8 @@ import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.ContactsContract.Contacts.Data;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -43,20 +45,26 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	private Context mContext;
 	private ContentResolver mContentResolver;
 	private ArrayList mContactList;
+	private boolean open = false;
+	DeviceWaitingSearch deviceWaitingSearch;
+	private Handler mHandler = new MyHander();
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		mContext = getApplicationContext();
 		mContentResolver=mContext.getContentResolver();
+		
 		initView();
 		initData();
 	}
+	
 	private void initView() {
 		bt=(Button)findViewById(R.id.bt_device);
 		bt.setOnClickListener(this);
 	}
-	boolean open =false;
+	
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
@@ -71,14 +79,28 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 
 	private void setSearch() {
 		Log.i("TAG", "click-device-initdata");
-		new DeviceWaitingSearch(this, "日灯光", "客厅"){
+		if(deviceWaitingSearch != null)
+			return;
+		
+		deviceWaitingSearch = new DeviceWaitingSearch(this, mHandler, "中央设备"){
 			@Override
 			public void onDeviceSearched(InetSocketAddress socketAddr) {
 				Log.i("TAG", "-onDeviceSearched-已上线，搜索主机：" + socketAddr.getAddress().getHostAddress() + ":" + socketAddr.getPort());
 			}
 
-		}.start();
+		};
+		deviceWaitingSearch.start();
 	}
+	
+	private class MyHander extends Handler {
+
+		@Override
+		public void handleMessage(Message msg) {
+			// TODO Auto-generated method stub
+			super.handleMessage(msg);
+		}
+	}
+	
 	/**
 	 * 1.获取联系人的姓名和电话号码-调试ok
 	 * 2.获得系统时间-调试ok

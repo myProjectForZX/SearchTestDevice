@@ -1,4 +1,4 @@
-package com.example.searchtestdevice.contact;
+package com.example.searchtestdevice.data;
 
 public class ContactBean {
 	int id;

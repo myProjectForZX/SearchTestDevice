@@ -1,4 +1,4 @@
-package com.example.searchtestdevice.language;
+package com.example.searchtestdevice.data;
 
 import java.lang.reflect.Method;
 import java.util.Locale;
