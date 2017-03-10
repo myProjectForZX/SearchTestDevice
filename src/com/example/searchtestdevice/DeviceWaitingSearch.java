@@ -2,8 +2,6 @@ package com.example.searchtestdevice;
 
 
 import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Message;
 
@@ -12,7 +10,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
-import java.nio.charset.Charset;
+
 
 import com.example.searchtestdevice.data.DataPack;
 import com.example.searchtestdevice.data.Log;

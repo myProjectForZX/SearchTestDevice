@@ -6,10 +6,15 @@ import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.nio.charset.Charset;
 
+import com.example.searchtestdevice.R;
 import android.content.Context;
+import android.database.CursorJoiner.Result;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.widget.Toast;
 
 public class DataPack {
 	private static final String TAG = "DataPack";
@@ -152,6 +157,7 @@ public class DataPack {
 				
 				switch (dataType) {
 				case PACKET_DATA_TYPE_DEVICE_PASS:
+					// to check password
 					if(DEVICE_PASSWORD.equals(resultString)) {
 						result = true;
 					} else {
@@ -160,6 +166,7 @@ public class DataPack {
 					
 					break;
 				case PACKET_DATA_TYPE_DEVICE_RESULT:
+					// to send result to host
 					if(DataPack.PACKET_CHK_RESULT_OK.equals(resultString)) {
 						result = true;
 					} else {

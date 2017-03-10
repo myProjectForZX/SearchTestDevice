@@ -8,6 +8,7 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import com.example.searchtestdevice.data.ContactBean;
+import com.example.searchtestdevice.data.DataPack;
 import com.example.searchtestdevice.data.InterAddressUtil;
 
 
@@ -19,6 +20,8 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,7 +42,7 @@ import android.widget.Toast;
  */
 public class MainActivity extends ActionBarActivity implements OnClickListener {
 
-	private Button bt;
+	private Button waitSearchButton;
 	private Context mContext;
 	private ContentResolver mContentResolver;
 	private ArrayList mContactList;
@@ -58,15 +61,16 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	}
 	
 	private void initView() {
-		bt=(Button)findViewById(R.id.bt_device);
-		bt.setOnClickListener(this);
+		waitSearchButton=(Button)findViewById(R.id.bt_device);
+		waitSearchButton.setOnClickListener(this);
 	}
 	
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.bt_device:
-			setSearch();//初始化之后才能被搜索到
+			if(checkWifiStatus(getApplicationContext()))
+				setSearch();//初始化之后才能被搜索到
 			break;
 
 		default:
@@ -95,6 +99,23 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		public void handleMessage(Message msg) {
 			// TODO Auto-generated method stub
 			super.handleMessage(msg);
+			
+			switch (msg.what) {
+			case DataPack.DEVICE_FIND:
+				if(msg.arg1 == DataPack.DEVICE_CONNECTED) {
+					//if connect with host, close deviceWaitSearch
+					//adn run tcp 
+					deviceWaitingSearch = null;
+					waitSearchButton.setEnabled(false);
+					Toast.makeText(getApplicationContext(), getResources().getString(R.string.udp_connect_success), Toast.LENGTH_SHORT).show();
+				} else if (msg.arg1 == DataPack.DEVICE_NOT_CONNECTED){
+					Toast.makeText(getApplicationContext(), getResources().getString(R.string.connect_failed), Toast.LENGTH_SHORT).show();
+				}
+				break;
+
+			default:
+				break;
+			}
 		}
 	}
 	
@@ -336,4 +357,15 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		Log.i("TAG", "mContactList="+mContactList.toString());
 	}
 
+    private boolean checkWifiStatus(Context context) {
+    	boolean result = false;
+    	ConnectivityManager wm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    	NetworkInfo ni = wm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if(!ni.isConnected()) {
+        	Toast.makeText(context, context.getResources().getString(R.string.please_open_wifi), Toast.LENGTH_SHORT).show();
+        } else {
+        	result = true;
+        }
+        return result;
+    }
 }
