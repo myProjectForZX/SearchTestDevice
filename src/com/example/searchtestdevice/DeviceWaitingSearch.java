@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 
 
-import com.example.searchtestdevice.data.DataPack;
+import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 /**
  * 设备等待搜索类
@@ -45,10 +45,10 @@ public abstract class DeviceWaitingSearch extends Thread {
             	socket.setSoTimeout(TOTAL_RECEIVE_TIME_OUT); // 连接超时还原成无穷大，阻塞式接收
                 socket.receive(pack);
                 Log.i(TAG, "-------> receive req package");
-                if (DataPack.parseDatagramPacket(pack, DataPack.PACKET_TYPE_FIND_HOST_REQ, mHandler)) {
+                if (DataPackDevice.parseDatagramPacket(pack, DataPackDevice.PACKET_TYPE_FIND_HOST_REQ, mHandler)) {
                 	//第一次反馈一个回应包 表示设备端接收到发送过来的请求  host端接收到后发送密码过来即可。
                 	Log.i(TAG, "-------> receive req package right");
-                    byte[] sendData = DataPack.packData(DataPack.PACKET_TYPE_FIND_DEVICE_RSP, null, null);   
+                    byte[] sendData = DataPackDevice.packData(DataPackDevice.PACKET_TYPE_FIND_DEVICE_RSP, null, null);   
                     DatagramPacket sendPack = new DatagramPacket(sendData, sendData.length, pack.getAddress(), pack.getPort());
                     Log.i(TAG, "-------> send respone package"); 
                     socket.send(sendPack);
@@ -61,22 +61,22 @@ public abstract class DeviceWaitingSearch extends Thread {
                         byte[] result;
                         String[] resultString;
                         Message msg = new Message();
-                        msg.what = DataPack.DEVICE_FIND;
+                        msg.what = DataPackDevice.DEVICE_FIND;
                         
-                        if (DataPack.parseDatagramPacket(pack, DataPack.PACKET_TYPE_FIND_HOST_CHK, mHandler)) {
+                        if (DataPackDevice.parseDatagramPacket(pack, DataPackDevice.PACKET_TYPE_FIND_HOST_CHK, mHandler)) {
                         	Log.i(TAG, "-------> password is right");
-                        	result = new byte[]{DataPack.PACKET_DATA_TYPE_DEVICE_RESULT, DataPack.PACKET_DATA_TYPE_DEVICE_NAME};
-                        	resultString = new String[]{DataPack.PACKET_CHK_RESULT_OK, mDeviceName};
+                        	result = new byte[]{DataPackDevice.PACKET_DATA_TYPE_DEVICE_RESULT, DataPackDevice.PACKET_DATA_TYPE_DEVICE_NAME};
+                        	resultString = new String[]{DataPackDevice.PACKET_CHK_RESULT_OK, mDeviceName};
                             onDeviceSearched((InetSocketAddress) pack.getSocketAddress());
-                            msg.arg1 = DataPack.DEVICE_CONNECTED;
+                            msg.arg1 = DataPackDevice.DEVICE_CONNECTED;
                         } else {
                         	Log.i(TAG, "-------> password is bad");
-                        	result = new byte[]{DataPack.PACKET_DATA_TYPE_DEVICE_RESULT};
-                        	resultString = new String[]{DataPack.PACKET_CHK_RESULT_BAD};
-                        	msg.arg1 = DataPack.DEVICE_NOT_CONNECTED;
+                        	result = new byte[]{DataPackDevice.PACKET_DATA_TYPE_DEVICE_RESULT};
+                        	resultString = new String[]{DataPackDevice.PACKET_CHK_RESULT_BAD};
+                        	msg.arg1 = DataPackDevice.DEVICE_NOT_CONNECTED;
                         }
                         
-                        byte[] sendCHKData = DataPack.packData(DataPack.PACKET_TYPE_FIND_DEVICE_CHK, result, resultString);   
+                        byte[] sendCHKData = DataPackDevice.packData(DataPackDevice.PACKET_TYPE_FIND_DEVICE_CHK, result, resultString);   
                         DatagramPacket sendCHKPack = new DatagramPacket(sendCHKData, sendCHKData.length, pack.getAddress(), pack.getPort());
                         Log.i(TAG, "-------> send result package"); 
                         socket.send(sendCHKPack);
@@ -85,7 +85,7 @@ public abstract class DeviceWaitingSearch extends Thread {
                         	mHandler.sendMessage(msg);
                         }
                         
-                        if(msg.arg1 == DataPack.DEVICE_CONNECTED)
+                        if(msg.arg1 == DataPackDevice.DEVICE_CONNECTED)
                         	break;
                     } catch (SocketTimeoutException e) {
                     }

@@ -16,7 +16,7 @@ import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.widget.Toast;
 
-public class DataPack {
+public class DataPackDevice {
 	private static final String TAG = "DataPack";
 	public static final byte DATA_HEAD = 0x51;
 	
@@ -42,6 +42,7 @@ public class DataPack {
     public static final byte PACKET_DATA_TYPE_DEVICE_ETIP = 0x25;
     public static final byte PACKET_DATA_TYPE_DEVICE_AUDI = 0x26;
     public static final byte PACKET_DATA_TYPE_DEVICE_CONT = 0x27;
+    public static final byte PACKET_DATA_TYPE_DEVICE_ALL  = 0x28;
     
     public static final String PACKET_CHK_RESULT_OK = "OK";
     public static final String PACKET_CHK_RESULT_BAD = "BAD";
@@ -90,6 +91,7 @@ public class DataPack {
      */
     private static boolean parsePack(byte data[], int dataOffSet, byte needCheckPackType, Handler handler) {
     	boolean result = false;
+    	Log.e(TAG, "---------------------->  parsePack");
         if (data == null) {
         	Log.e(TAG, "---------------------->  data = null");
             return result;
@@ -167,7 +169,7 @@ public class DataPack {
 					break;
 				case PACKET_DATA_TYPE_DEVICE_RESULT:
 					// to send result to host
-					if(DataPack.PACKET_CHK_RESULT_OK.equals(resultString)) {
+					if(DataPackDevice.PACKET_CHK_RESULT_OK.equals(resultString)) {
 						result = true;
 					} else {
 						result = false;
@@ -194,6 +196,9 @@ public class DataPack {
 				case PACKET_DATA_TYPE_DEVICE_AUDI:
 					break;
 				case PACKET_DATA_TYPE_DEVICE_CONT:
+					break;
+				case PACKET_DATA_TYPE_DEVICE_ALL:
+					Log.i(TAG, "----------------------> req all data");
 					break;
 				default:
 					break;
@@ -232,8 +237,8 @@ public class DataPack {
     }
     
     //用于tcp数据包解析
-    public static boolean parseServiceSocktPackagt(InputStream inputStream, Handler handler) {
-    	return parsePack(input2byte(inputStream), 0, PACKET_TYPE_SEND_RECV_DATA, handler);
+    public static boolean parseServiceSocktPackage(byte[] data, Handler handler) {
+    	return parsePack(data, 0, PACKET_TYPE_SEND_RECV_DATA, handler);
     }
 
 	private static final byte[] input2byte(InputStream inStream) {

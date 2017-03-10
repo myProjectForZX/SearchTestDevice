@@ -8,7 +8,7 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import com.example.searchtestdevice.data.ContactBean;
-import com.example.searchtestdevice.data.DataPack;
+import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.InterAddressUtil;
 
 
@@ -48,6 +48,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	private ArrayList mContactList;
 	private DeviceWaitingSearch deviceWaitingSearch;
 	private Handler mHandler = new MyHander();
+	private String mDeviceIp;  
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +87,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		deviceWaitingSearch = new DeviceWaitingSearch(this, mHandler, "中央设备"){
 			@Override
 			public void onDeviceSearched(InetSocketAddress socketAddr) {
-				Log.i("TAG", "-onDeviceSearched-已上线，搜索主机：" + socketAddr.getAddress().getHostAddress() + ":" + socketAddr.getPort());
+				mDeviceIp = socketAddr.getAddress().getHostAddress();
+				Log.i("TAG", "-onDeviceSearched- hostIp : " + socketAddr.getAddress().getHostAddress() + ":" + socketAddr.getPort());
 			}
 
 		};
@@ -101,14 +103,17 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 			super.handleMessage(msg);
 			
 			switch (msg.what) {
-			case DataPack.DEVICE_FIND:
-				if(msg.arg1 == DataPack.DEVICE_CONNECTED) {
+			case DataPackDevice.DEVICE_FIND:
+				if(msg.arg1 == DataPackDevice.DEVICE_CONNECTED) {
 					//if connect with host, close deviceWaitSearch
 					//adn run tcp 
 					deviceWaitingSearch = null;
 					waitSearchButton.setEnabled(false);
 					Toast.makeText(getApplicationContext(), getResources().getString(R.string.udp_connect_success), Toast.LENGTH_SHORT).show();
-				} else if (msg.arg1 == DataPack.DEVICE_NOT_CONNECTED){
+					
+					//after connect with host, run tcp connect.
+					new DeviceSendAndRecvDataThread(mHandler, mDeviceIp).start();
+				} else if (msg.arg1 == DataPackDevice.DEVICE_NOT_CONNECTED){
 					Toast.makeText(getApplicationContext(), getResources().getString(R.string.connect_failed), Toast.LENGTH_SHORT).show();
 				}
 				break;
