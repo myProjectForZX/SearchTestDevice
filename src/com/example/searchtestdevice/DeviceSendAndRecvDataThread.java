@@ -14,17 +14,20 @@ import com.example.searchtestdevice.data.Log;
 
 import android.os.Handler;
 
-public class DeviceSendAndRecvDataThread extends Thread{
+public class DeviceSendAndRecvDataThread extends Thread {
 	private final String TAG = "DeviceSendAndRecvDataThread";
 	
 	private Handler mHandler;
 	private ServerSocket serverSocket;
 	private static final int SERVER_SOCKET_PORT = 9001;
 	private String hostIp;
+	private static final int RECEIVE_TIME_OUT = 10 * 60 * 1000;
+	private DeviceSetting mDeviceSetting;
 	
-	public DeviceSendAndRecvDataThread(Handler handler, String ip) {
+	public DeviceSendAndRecvDataThread(Handler handler, String ip, DeviceSetting ds) {
 		mHandler = handler;
 		hostIp = ip;
+		mDeviceSetting = ds;
 	}
 	
 	@Override
@@ -34,26 +37,32 @@ public class DeviceSendAndRecvDataThread extends Thread{
 		try {
 			serverSocket = new ServerSocket(SERVER_SOCKET_PORT);
 			while(true) {
+				serverSocket.setSoTimeout(RECEIVE_TIME_OUT);
 				Socket deviceSocket = serverSocket.accept();
 				
 				String remoteIp = deviceSocket.getInetAddress().getHostAddress();
 				Log.i(TAG, "------------------->  remoteIp : " + remoteIp + "   hostIp : " + hostIp + "   isEqual : " + remoteIp.equals(hostIp));
 				
 				//非目的地的ip不做处理。
-				if(!remoteIp.equals(hostIp))
+				if(!remoteIp.equals(hostIp)) {
+					deviceSocket.close();
 					continue;
+				}
+					
+				parseData(deviceSocket, mDeviceSetting);
 				
-				receiveData(deviceSocket);
+				deviceSocket.close();
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			Log.i(TAG, "---------------------> wrong");
+			Log.i(TAG, "---------------------> wrong : e " + e);
+			
 		}
 	}
 	
     @SuppressWarnings("resource")
-	public byte[] receiveData(Socket socket) {
+	public byte[] parseData(Socket socket, DeviceSetting ds) {
         byte[] data = null;
         if (socket != null && socket.isConnected()) {
         	if(!socket.isInputShutdown()) {
@@ -65,7 +74,7 @@ public class DeviceSendAndRecvDataThread extends Thread{
 						byte[] message = new byte[length];
 						dIn.readFully(message, 0, message.length);
 						
-						DataPackDevice.parseServiceSocktPackage(message, mHandler);
+						DataPackDevice.parseServiceSocktPackage(message, mHandler, socket, ds);
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -83,32 +92,5 @@ public class DeviceSendAndRecvDataThread extends Thread{
             data = new byte[1];
         }
         return data;
-    }
-    
-    private void sendMessage(Socket socket, byte packType, byte[]dataType, String[]dataContent) {
-    	if(socket == null)
-    		return;
-    	
-    	DataOutputStream dOut = null;
-    	byte[] data = DataPackDevice.packData(packType, dataType, dataContent);
-    	
-		try {
-			dOut = new DataOutputStream(socket.getOutputStream());
-			if (dOut != null) {
-				dOut.writeInt(data.length);
-				dOut.write(data);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			try {
-				if (dOut != null)
-					dOut.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
     }
 }
