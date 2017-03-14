@@ -48,7 +48,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	private ArrayList mContactList;
 	private DeviceWaitingSearch deviceWaitingSearch;
 	private Handler mHandler = new MyHander();
-	private String mDeviceIp;  
+	private String mHostIp;  
 	private DeviceSetting mDeviceSetting;
 	
 	@Override
@@ -88,7 +88,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		deviceWaitingSearch = new DeviceWaitingSearch(this, mHandler, "中央设备"){
 			@Override
 			public void onDeviceSearched(InetSocketAddress socketAddr) {
-				mDeviceIp = socketAddr.getAddress().getHostAddress();
+				mHostIp = socketAddr.getAddress().getHostAddress();
 				Log.i("TAG", "-onDeviceSearched- hostIp : " + socketAddr.getAddress().getHostAddress() + ":" + socketAddr.getPort());
 			}
 
@@ -113,10 +113,52 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 					Toast.makeText(getApplicationContext(), getResources().getString(R.string.udp_connect_success), Toast.LENGTH_SHORT).show();
 					
 					//after connect with host, run tcp connect.
-					new DeviceSendAndRecvDataThread(mHandler, mDeviceIp, mDeviceSetting).start();
+					new DeviceRecvDataThread(mHandler, mHostIp, mDeviceSetting).start();
 				} else if (msg.arg1 == DataPackDevice.DEVICE_NOT_CONNECTED){
 					Toast.makeText(getApplicationContext(), getResources().getString(R.string.connect_failed), Toast.LENGTH_SHORT).show();
 				}
+				break;
+				
+			case DataPackDevice.PACKET_TYPE_SEND_RECV_DATA:
+				Toast.makeText(mContext, "begin to send data to client", Toast.LENGTH_LONG).show();
+				byte[] dataType = new byte[]{DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG};
+				String[] dataContent = new String[]{"new servcie....."};
+				
+				new DeviceSendDataThread(mHandler, mHostIp, dataType, dataContent).start();
+				
+				switch (msg.arg1) {
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG:
+					
+					break;
+					
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_AUDI:
+					
+					break;
+				
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_NAME:
+					
+					break;
+					
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_TIME:
+					
+					break;
+					
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_ETIP:
+					
+					break;
+					
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_CONT:
+					
+					break;
+					
+				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_ALL:
+					
+					break;
+
+				default:
+					break;
+				}
+				
 				break;
 
 			default:

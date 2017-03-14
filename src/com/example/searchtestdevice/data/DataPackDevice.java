@@ -18,6 +18,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.os.Message;
 import android.widget.Toast;
 
 public class DataPackDevice {
@@ -153,54 +154,60 @@ public class DataPackDevice {
 					break;
 				}
 				
+				if(dataType == 0)
+					continue;
+
 				String resultString = new String(data, offset, len, Charset.forName("UTF-8"));
 				Log.e(TAG, "----------------> dataType : " + dataType);
-				switch (dataType) {
-				case PACKET_DATA_TYPE_DEVICE_PASS:
-					// to check password
+				
+				if(dataType == PACKET_DATA_TYPE_DEVICE_PASS) {
 					if(DEVICE_PASSWORD.equals(resultString)) {
 						result = true;
 					} else {
 						result = false;
 					}
-					
-					break;
-				case PACKET_DATA_TYPE_DEVICE_RESULT:
-					// to send result to host
+				} else if (dataType == PACKET_DATA_TYPE_DEVICE_RESULT) {
 					if(DataPackDevice.PACKET_CHK_RESULT_OK.equals(resultString)) {
 						result = true;
 					} else {
 						result = false;
 					}
-					break;
-				case PACKET_DATA_TYPE_DEVICE_NAME:
-					/*
-					 * String name = new String(data, offset, len,
-					 * Charset.forName("UTF-8")); device = new DeviceBean();
-					 * device.setName(name); device.setIp(ip);
-					 * device.setPort(port);
-					 */
-					break;
-				case PACKET_DATA_TYPE_DEVICE_TIME:
-					/*
-					 * String room = new String(data, offset, len,
-					 * Charset.forName("UTF-8")); if (device != null) {
-					 * device.setRoom(room); }
-					 */
-				case PACKET_DATA_TYPE_DEVICE_LANG:
-					break;
-				case PACKET_DATA_TYPE_DEVICE_ETIP:
-					break;
-				case PACKET_DATA_TYPE_DEVICE_AUDI:
-					break;
-				case PACKET_DATA_TYPE_DEVICE_CONT:
-					break;
-				case PACKET_DATA_TYPE_DEVICE_ALL:
-					Log.i(TAG, "----------------------> req all data");
-					break;
-				default:
-					break;
+				} else {
+					boolean isDefault = false;
+					Message msg = new Message();
+					msg.what = PACKET_TYPE_SEND_RECV_DATA;
+					
+					switch (dataType) {
+					case PACKET_DATA_TYPE_DEVICE_NAME:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_NAME;
+						break;
+					case PACKET_DATA_TYPE_DEVICE_TIME:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_TIME;
+						break;
+					case PACKET_DATA_TYPE_DEVICE_LANG:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_LANG;
+						break;
+					case PACKET_DATA_TYPE_DEVICE_ETIP:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_ETIP;
+						break;
+					case PACKET_DATA_TYPE_DEVICE_AUDI:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_AUDI;
+						break;
+					case PACKET_DATA_TYPE_DEVICE_CONT:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_CONT;
+						break;
+					case PACKET_DATA_TYPE_DEVICE_ALL:
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_ALL;
+						break;
+					default:
+						isDefault = true;
+						break;
+					}
+					if(handler != null && !isDefault) {
+						handler.sendMessage(msg);
+					}
 				}
+				
 				offset += len;
 			}
 			break;
@@ -213,92 +220,7 @@ public class DataPackDevice {
         return result;
     }
     
-    /**
-     * 解析报文
-     * 协议：DATA_HEAD + packType(1) + data(n)
-     *  data: 由n组数据，每组的组成结构type(1) + length(4) + data(length)
-     */
-    private static byte[] parseTcpPack(byte data[], Handler handler, Socket socket, DeviceSetting ds) {
-    	byte[] result = null;
-    	Log.e(TAG, "---------------------->  parseTcpPack");
-        if (data == null) {
-        	Log.e(TAG, "---------------------->  data = null");
-            return null;
-        }
 
-        int dataLen = data.length;
-        int offset = 0;
-        byte packType = 0x00;
-        byte dataType;
-        int len;
- 
-        if (dataLen < 2) {
-        	Log.e(TAG, "---------------------->  datalen < 2");
-            return null;
-        }
-
-        System.arraycopy(data, 0, data, 0, dataLen);
- 
-        //to check packType is right.
-        if (data[offset++] != DATA_HEAD  || (packType = data[offset++]) != DataPackDevice.PACKET_TYPE_SEND_RECV_DATA) {
-        	Log.e(TAG, "----------------------> dataType mismath");
-            return null;
-        }
-        Log.e(TAG, "----------------------> packType : "  + packType);
-		switch (packType) {
-		case PACKET_TYPE_SEND_RECV_DATA:
-			// host update UI
-			// to get Data.
-			while (offset + 5 < dataLen) {
-				dataType = data[offset++];
-				len = data[offset++] & 0xFF;
-				len |= (data[offset++] << 8);
-				len |= (data[offset++] << 16);
-				len |= (data[offset++] << 24);
-
-				if (offset + len > dataLen) {
-					break;
-				}
-				
-				String resultString = new String(data, offset, len, Charset.forName("UTF-8"));
-				Log.e(TAG, "----------------> dataType : " + dataType + " resultString : " + resultString);
-				switch (dataType) {
-				case PACKET_DATA_TYPE_DEVICE_TIME:
-					if(ds != null)
-						ds.setSystemTime(resultString);
-					break;
-				case PACKET_DATA_TYPE_DEVICE_LANG:
-					if(ds != null)
-						ds.setLanguage(resultString);
-					break;
-				case PACKET_DATA_TYPE_DEVICE_ETIP:
-					if(ds != null)
-						ds.setEthernetIp(resultString);
-					break;
-				case PACKET_DATA_TYPE_DEVICE_AUDI:
-					if(ds != null)
-						ds.setVoice(0, 0);
-					break;
-				case PACKET_DATA_TYPE_DEVICE_CONT:
-					
-					break;
-				case PACKET_DATA_TYPE_DEVICE_ALL:
-					break;
-				default:
-					break;
-				}
-				offset += len;
-			}
-			break;
-
-		default:
-			Log.e(TAG, "----------------------> default");
-			break;
-		}
-        return result;
-    }
-    
-    
     private static byte[] getBytesFromType(byte type, String val) {
         byte[] retVal = new byte[0];
         if (val != null) {
@@ -320,38 +242,10 @@ public class DataPackDevice {
     }
     
     //用于tcp数据包解析
-    public static byte[] parseServiceSocktPackage(byte[] data, Handler handler, Socket socket, DeviceSetting ds) {
-    	return parseTcpPack(data, handler, socket, ds);
+    public static boolean parseServiceSocktPackage(byte[] data, Handler handler) {
+    	return parsePack(data, 0, DataPackDevice.PACKET_TYPE_SEND_RECV_DATA, handler);
     }
     
-    
-    private void sendMessage(Socket socket, byte packType, byte[]dataType, String[]dataContent) {
-    	if(socket == null)
-    		return;
-    	
-    	DataOutputStream dOut = null;
-    	byte[] data = DataPackDevice.packData(packType, dataType, dataContent);
-    	
-		try {
-			dOut = new DataOutputStream(socket.getOutputStream());
-			if (dOut != null) {
-				dOut.writeInt(data.length);
-				dOut.write(data);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			try {
-				if (dOut != null)
-					dOut.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-    }
-
 	private static final byte[] input2byte(InputStream inStream) {
 		ByteArrayOutputStream swapStream = new ByteArrayOutputStream();
 		byte[] buff = new byte[100];

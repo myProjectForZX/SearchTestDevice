@@ -14,7 +14,7 @@ import com.example.searchtestdevice.data.Log;
 
 import android.os.Handler;
 
-public class DeviceSendAndRecvDataThread extends Thread {
+public class DeviceRecvDataThread extends Thread {
 	private final String TAG = "DeviceSendAndRecvDataThread";
 	
 	private Handler mHandler;
@@ -22,12 +22,10 @@ public class DeviceSendAndRecvDataThread extends Thread {
 	private static final int SERVER_SOCKET_PORT = 9001;
 	private String hostIp;
 	private static final int RECEIVE_TIME_OUT = 10 * 60 * 1000;
-	private DeviceSetting mDeviceSetting;
 	
-	public DeviceSendAndRecvDataThread(Handler handler, String ip, DeviceSetting ds) {
+	public DeviceRecvDataThread(Handler handler, String ip, DeviceSetting ds) {
 		mHandler = handler;
 		hostIp = ip;
-		mDeviceSetting = ds;
 	}
 	
 	@Override
@@ -49,7 +47,7 @@ public class DeviceSendAndRecvDataThread extends Thread {
 					continue;
 				}
 					
-				parseData(deviceSocket, mDeviceSetting);
+				parseData(deviceSocket);
 				
 				deviceSocket.close();
 			}
@@ -62,7 +60,7 @@ public class DeviceSendAndRecvDataThread extends Thread {
 	}
 	
     @SuppressWarnings("resource")
-	public byte[] parseData(Socket socket, DeviceSetting ds) {
+	public byte[] parseData(Socket socket) {
         byte[] data = null;
         if (socket != null && socket.isConnected()) {
         	if(!socket.isInputShutdown()) {
@@ -74,7 +72,7 @@ public class DeviceSendAndRecvDataThread extends Thread {
 						byte[] message = new byte[length];
 						dIn.readFully(message, 0, message.length);
 						
-						DataPackDevice.parseServiceSocktPackage(message, mHandler, socket, ds);
+						DataPackDevice.parseServiceSocktPackage(message, mHandler);
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
