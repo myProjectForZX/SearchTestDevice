@@ -121,14 +121,9 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 				
 			case DataPackDevice.PACKET_TYPE_SEND_RECV_DATA:
 				Toast.makeText(mContext, "begin to send data to client", Toast.LENGTH_LONG).show();
-				byte[] dataType = new byte[]{DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG};
-				String[] dataContent = new String[]{"new servcie....."};
-				
-				new DeviceSendDataThread(mHandler, mHostIp, dataType, dataContent).start();
-				
+
 				switch (msg.arg1) {
 				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG:
-					
 					break;
 					
 				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_AUDI:
@@ -152,7 +147,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 					break;
 					
 				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_ALL:
-					
+					sendAllData();
 					break;
 
 				default:
@@ -177,5 +172,38 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         	result = true;
         }
         return result;
+    }
+    
+    private void sendAllData() {
+    	byte[] dataType = new byte[] {
+    		DataPackDevice.PACKET_DATA_TYPE_DEVICE_NAME,
+    		DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG,
+    		DataPackDevice.PACKET_DATA_TYPE_DEVICE_AUDI,
+			DataPackDevice.PACKET_DATA_TYPE_DEVICE_TIME,
+			DataPackDevice.PACKET_DATA_TYPE_DEVICE_ETIP,
+			DataPackDevice.PACKET_DATA_TYPE_DEVICE_CONT
+    	};
+    	
+    	String[] dataContent = new String[dataType.length];
+    	
+    	//device name
+    	dataContent[0] = DataPackDevice.DEVICE_NAME;
+    	
+    	//device lang
+    	dataContent[1] = mDeviceSetting.getLanguage();
+    	
+    	//device audio
+    	dataContent[2] = mDeviceSetting.getVoice(0);
+    	
+    	//device time
+    	dataContent[3] = mDeviceSetting.getSystemTime();
+    	
+    	//device ip address
+    	dataContent[4] = mDeviceSetting.getEthernetIp();
+    	
+    	//device contact
+    	dataContent[5] = "empty now";
+    	
+    	new DeviceSendDataThread(mHandler, mHostIp, dataType, dataContent).start();
     }
 }

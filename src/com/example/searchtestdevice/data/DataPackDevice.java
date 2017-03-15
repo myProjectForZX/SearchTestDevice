@@ -53,6 +53,7 @@ public class DataPackDevice {
     public static final String PACKET_CHK_RESULT_BAD = "BAD";
     
     public static final String DEVICE_PASSWORD = "123456";
+    public static final String DEVICE_NAME     = "中央设备";
     
     //在链接建立的过程中
     public static final int DEVICE_FIND = 0;

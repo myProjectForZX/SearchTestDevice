@@ -89,7 +89,7 @@ public class DeviceSetting {
 	}
 	
 	public String getLanguage() {
-		return null;
+		return "zh_zcily+zh_c:en:franch";
 	}
 	
 	public void setEthernetIp(String ip) {
@@ -97,7 +97,7 @@ public class DeviceSetting {
 	}
 	
 	public String getEthernetIp() {
-		return null;
+		return "192.168.255.255";
 	}
 	
 	public void setVoice(int streamType, int streamValue) {
@@ -115,7 +115,7 @@ public class DeviceSetting {
 		int max = mAudioManager.getStreamMaxVolume( streamType );
 		int current = mAudioManager.getStreamVolume( streamType );
 		
-		return result;
+		return "1:20:100+2-30-100:3-34-100";
 	}
 
 	public void updataContactData(String newName, String number) {
