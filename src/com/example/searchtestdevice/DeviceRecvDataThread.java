@@ -1,11 +1,7 @@
 package com.example.searchtestdevice;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -22,6 +18,7 @@ public class DeviceRecvDataThread extends Thread {
 	private static final int SERVER_SOCKET_PORT = 9001;
 	private String hostIp;
 	private static final int RECEIVE_TIME_OUT = 10 * 60 * 1000;
+	private boolean isRunning = true;
 	
 	public DeviceRecvDataThread(Handler handler, String ip, DeviceSetting ds) {
 		mHandler = handler;
@@ -34,20 +31,21 @@ public class DeviceRecvDataThread extends Thread {
 		super.run();
 		try {
 			serverSocket = new ServerSocket(SERVER_SOCKET_PORT);
-			while(true) {
+			while(isRunning) {
 				serverSocket.setSoTimeout(RECEIVE_TIME_OUT);
 				Socket deviceSocket = serverSocket.accept();
 				
 				String remoteIp = deviceSocket.getInetAddress().getHostAddress();
 				Log.i(TAG, "------------------->  remoteIp : " + remoteIp + "   hostIp : " + hostIp + "   isEqual : " + remoteIp.equals(hostIp));
 				
-				//非目的地的ip不做处理。
 				if(!remoteIp.equals(hostIp)) {
 					deviceSocket.close();
 					continue;
 				}
-					
-				parseData(deviceSocket);
+				
+				if(true == parseData(deviceSocket)) {
+					isRunning = false;
+				}
 				
 				deviceSocket.close();
 			}
@@ -55,13 +53,22 @@ public class DeviceRecvDataThread extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			Log.i(TAG, "---------------------> wrong : e " + e);
-			
+		} finally {
+			try {
+				if (serverSocket != null) {
+					serverSocket.close();
+					serverSocket = null;
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
     @SuppressWarnings("resource")
-	public byte[] parseData(Socket socket) {
-        byte[] data = null;
+	public boolean parseData(Socket socket) {
+        boolean result = false;
         if (socket != null && socket.isConnected()) {
         	if(!socket.isInputShutdown()) {
         		DataInputStream dIn = null;
@@ -72,7 +79,7 @@ public class DeviceRecvDataThread extends Thread {
 						byte[] message = new byte[length];
 						dIn.readFully(message, 0, message.length);
 						
-						DataPackDevice.parseServiceSocktPackage(message, mHandler);
+						result = DataPackDevice.parseServiceSocktPackage(message, mHandler);
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -86,9 +93,7 @@ public class DeviceRecvDataThread extends Thread {
 					}
 				}
 			}
-        } else {
-            data = new byte[1];
         }
-        return data;
+        return result;
     }
 }

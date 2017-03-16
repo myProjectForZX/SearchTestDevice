@@ -8,8 +8,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
-import android.util.Log;
-
 public class InterAddressUtil {
 	public static String loadFileAsString(String filePath) throws java.io.IOException{  
         StringBuffer fileData = new StringBuffer(1000);  
@@ -31,24 +29,4 @@ public class InterAddressUtil {
                 return null;  
             }  
     }  
-      
-    public static String getLocalIpAddress() {  
-        try {  
-                for (Enumeration<NetworkInterface> en = NetworkInterface  
-                                .getNetworkInterfaces(); en.hasMoreElements();) {  
-                        NetworkInterface intf = en.nextElement();   
-                        for (Enumeration<InetAddress> enumIpAddr = intf  
-                                        .getInetAddresses(); enumIpAddr.hasMoreElements();) {  
-                                InetAddress inetAddress = enumIpAddr.nextElement();  
-                                if (!inetAddress.isLoopbackAddress()) {   
-                                        return inetAddress.getHostAddress().toString();  
-                                }  
-                        }  
-                }  
-        } catch (SocketException ex) {  
-        	Log.i("TAG", "“Ï≥£¡À");
-        	Log.i("TAG", "WifiPreference IpAddress-"+ex.toString());
-        }  
-        return null;  
-}  
 }

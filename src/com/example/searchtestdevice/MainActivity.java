@@ -1,47 +1,28 @@
 package com.example.searchtestdevice;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Locale;
 
-import com.example.searchtestdevice.data.ContactBean;
 import com.example.searchtestdevice.data.DataPackDevice;
-import com.example.searchtestdevice.data.InterAddressUtil;
+import com.example.searchtestdevice.data.Log;
 
 
 import android.support.v7.app.ActionBarActivity;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Configuration;
-import android.database.Cursor;
-import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.ContactsContract.Contacts.Data;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
-/**
- * 1.此apk为设备端的apk，需要先打开搜索，之后才能被host的apk搜索得到
- * 2.目前调试的效果是设备端打开后，运行host的apk可以搜索到同一局域网的信息，可以获得ip和端口信息(如果host也要被搜索到，则也要运行此apk)
- * 3.具体通信传数据的细节相应数据的细节我就没细化调试了
- * 4.然后可以通过initdata获得相关数据，setdata设置相关数据，具体已调试好和未调试好的见方法说明
- *
- */
-public class MainActivity extends ActionBarActivity implements OnClickListener {
 
+
+public class MainActivity extends ActionBarActivity implements OnClickListener {
+	private static final String TAG = "mainDevice";
 	private Button waitSearchButton;
 	private Context mContext;
 	private ContentResolver mContentResolver;
@@ -63,7 +44,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	}
 	
 	private void initView() {
-		waitSearchButton=(Button)findViewById(R.id.bt_device);
+		waitSearchButton = (Button)findViewById(R.id.bt_device);
 		waitSearchButton.setOnClickListener(this);
 	}
 	
@@ -72,7 +53,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		switch (v.getId()) {
 		case R.id.bt_device:
 			if(checkWifiStatus(getApplicationContext()))
-				setSearch();//初始化之后才能被搜索到
+				setSearch();
 			break;
 
 		default:
@@ -81,11 +62,11 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	}
 
 	private void setSearch() {
-		Log.i("TAG", "click-device-initdata");
+		Log.i(TAG, "click-device-initdata");
 		if(deviceWaitingSearch != null)
 			return;
 		
-		deviceWaitingSearch = new DeviceWaitingSearch(this, mHandler, "中央设备"){
+		deviceWaitingSearch = new DeviceWaitingSearch(this, mHandler, "锟斤拷锟斤拷锟借备"){
 			@Override
 			public void onDeviceSearched(InetSocketAddress socketAddr) {
 				mHostIp = socketAddr.getAddress().getHostAddress();
@@ -94,6 +75,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 
 		};
 		deviceWaitingSearch.start();
+		waitSearchButton.setEnabled(false);
 	}
 	
 	private class MyHander extends Handler {
@@ -122,39 +104,62 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 			case DataPackDevice.PACKET_TYPE_SEND_RECV_DATA:
 				Toast.makeText(mContext, "begin to send data to client", Toast.LENGTH_LONG).show();
 
-				switch (msg.arg1) {
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG:
-					break;
-					
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_AUDI:
-					
-					break;
+				if(mDeviceSetting == null)
+					return;
 				
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_NAME:
-					
-					break;
-					
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_TIME:
-					
-					break;
-					
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_ETIP:
-					
-					break;
-					
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_CONT:
-					
-					break;
-					
-				case DataPackDevice.PACKET_DATA_TYPE_DEVICE_ALL:
+				if(msg.arg1 == DataPackDevice.PACKET_DATA_TYPE_DEVICE_ALL) {
 					sendAllData();
-					break;
+				} else {
+					boolean isDefault = false;
+					byte[] dataType = new byte[]{DataPackDevice.PACKET_DATA_TYPE_DEVICE_SETIING_RESULT};
+					boolean result = false;
+					String value = (String)msg.obj;
+					
+					switch (msg.arg1) {
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG:
+						result = mDeviceSetting.setSystemTime(value);
+						break;
+						
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_AUDI:
+						result = mDeviceSetting.setVoice(value);
+						break;
+					
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_NAME:
+						//not support set device name.
+						result = true;
+						break;
+						
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_TIME:
+						result = mDeviceSetting.setSystemTime(value);
+						break;
+						
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_ETIP:
+						result = mDeviceSetting.setEthernetIp(value);
+						break;
+						
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_CONT:
+						result = mDeviceSetting.updataContactData(value);
+						break;
+					
+					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_QUIT:
+						deviceWaitingSearch = null;
+						waitSearchButton.setEnabled(true);
+						isDefault = true;
+						break;
 
-				default:
-					break;
+					default:
+						isDefault = true;
+						break;
+					}
+					
+					if(!isDefault) {
+						String[] dataContent = new String[]{
+								(result ? DataPackDevice.PACKET_CHK_RESULT_OK : DataPackDevice.PACKET_CHK_RESULT_BAD)
+						};
+						
+						new DeviceSendDataThread(mHandler, mHostIp, dataType, dataContent).start();
+					}
 				}
-				
-				break;
 
 			default:
 				break;

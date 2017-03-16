@@ -2,22 +2,30 @@ package com.example.searchtestdevice;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import com.example.searchtestdevice.data.ContactBean;
-import com.example.searchtestdevice.data.InterAddressUtil;
+import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 
+import android.R.integer;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.provider.ContactsContract.Contacts.Data;
 import android.util.DisplayMetrics;
 import android.widget.Toast;
@@ -27,19 +35,29 @@ public class DeviceSetting {
 	private Context mContext;
 	private ContentResolver mContentResolver;
 	
+	private String[][] supportLanguage = new String[][] {
+		{Locale.SIMPLIFIED_CHINESE.toString(), "ç®€ä½“"},
+		{Locale.TRADITIONAL_CHINESE.toString(), "ç¹ä½“"},
+		{Locale.ENGLISH.toString(), "è‹±è¯­"}
+	};
+	
+	private String[][] supportAudio = new String[][] {
+		{String.valueOf(AudioManager.STREAM_SYSTEM), "ç³»ç»Ÿ"},	
+		{String.valueOf(AudioManager.STREAM_ALARM), "é—¹é’Ÿ"},
+		{String.valueOf(AudioManager.STREAM_MUSIC), "åª’ä½“"}
+	};
+	
 	public DeviceSetting(Context context) {
 		mContext = context;
 		mContentResolver = context.getContentResolver();
 	}
 	
-	// ÉèÖÃÏµÍ³Ê±¼ä£¬ÄêÔÂÈÕÊ±·ÖÃë£¬ĞèÒªrootÈ¨ÏŞ²Å¿ÉÒÔ£¬Èç20170304.205000
-	public void setSystemTime(String datetimes) {
-		// yyyyMMdd.HHmmss¡¿
+	public boolean setSystemTime(String datetimes) {
+		boolean result = true;
 		try {
 			Process process = Runtime.getRuntime().exec("su");
-			// String datetime = "20170304.205000"; // ²âÊÔµÄÉèÖÃµÄÊ±¼ä¡¾Ê±¼ä¸ñÊ½
-			String datetime = ""; // ²âÊÔµÄÉèÖÃµÄÊ±¼ä¡¾Ê±¼ä¸ñÊ½
-			datetime = datetimes.toString(); // yyyyMMdd.HHmmss¡¿
+			String datetime = ""; 
+			datetime = datetimes.toString(); 
 			DataOutputStream os = new DataOutputStream(
 					process.getOutputStream());
 			os.writeBytes("setprop persist.sys.timezone GMT\n");
@@ -48,8 +66,10 @@ public class DeviceSetting {
 			os.writeBytes("exit\n");
 			os.flush();
 		} catch (IOException e) {
-			Toast.makeText(mContext, "Çë»ñÈ¡RootÈ¨ÏŞ", Toast.LENGTH_SHORT).show();
+			result = false;
+			Toast.makeText(mContext, "need root", Toast.LENGTH_SHORT).show();
 		}
+		return result;
 	}
 
 	public String getSystemTime() {
@@ -78,6 +98,7 @@ public class DeviceSetting {
 
 	public void setLanguage(String language) {
 		Log.i(TAG, "setLanguage-language="+language);
+		
 		try {
 			Configuration config = mContext.getResources().getConfiguration();
 			DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
@@ -88,76 +109,123 @@ public class DeviceSetting {
 		}
 	}
 	
+	//æ•°æ®æ ¼å¼
+	//å½“å‰è¯­è¨€:xx:yy
+	//xx  yy ä¸ºå‰©ä¸‹çš„æ”¯æŒçš„è¯­è¨€
 	public String getLanguage() {
-		return "zh_zcily+zh_c:en:franch";
+		Locale currentLocale = Locale.getDefault();
+		StringBuffer sb = new StringBuffer();
+		
+		int i = 0;
+		if(currentLocale.getLanguage().toString().startsWith("en")) {
+			sb.append(supportLanguage[2][1]);
+			i = 2;
+		} else if (currentLocale.toString().equals("zh_CN")) {
+			sb.append(supportLanguage[0][1]);
+			i = 0;
+		} else if (currentLocale.toString().equals("zh_TW")) {
+			sb.append(supportLanguage[1][1]);
+			i = 1;
+		}
+		
+		sb.append(":");
+		
+		for(int j = 0; j < supportLanguage.length; ++j) {
+			if(j == i)
+				continue;
+			sb.append(supportLanguage[j][1] + ":");
+		}
+		
+		if(sb.length() > 1)
+			sb.deleteCharAt(sb.length() - 1);
+		return sb.toString();
 	}
 	
-	public void setEthernetIp(String ip) {
-		
+	public boolean setEthernetIp(String ip) {
+		boolean result = true;
+		return result;
 	}
 	
 	public String getEthernetIp() {
-		return "192.168.255.255";
+		return getLocalIpAddress();
 	}
 	
-	public void setVoice(int streamType, int streamValue) {
+	public boolean setVoice(String typeValue) {
+		boolean result = true;
 		Log.i(TAG, "-------------> setVoice");
 		AudioManager mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
 
-		mAudioManager.setStreamVolume(streamType, streamValue, AudioManager.FLAG_PLAY_SOUND | AudioManager.FLAG_SHOW_UI);
+		//mAudioManager.setStreamVolume(streamType, streamValue, AudioManager.FLAG_PLAY_SOUND | AudioManager.FLAG_SHOW_UI);
+		return result;
 	}
 	
 	public String getVoice(int streamType) {
 		String result = null;
 		Log.i(TAG, "-------------> getVoice");
-		AudioManager mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-
-		int max = mAudioManager.getStreamMaxVolume( streamType );
-		int current = mAudioManager.getStreamVolume( streamType );
 		
-		return "1:20:100+2-30-100:3-34-100";
+		AudioManager mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+		StringBuffer sb = new StringBuffer();
+		
+		for(int i = 0; i < supportAudio.length; ++i) {
+			int type = Integer.valueOf(supportAudio[i][0]);
+			int current = mAudioManager.getStreamVolume(type);
+			int max = mAudioManager.getStreamMaxVolume(type);
+			
+			sb.append(supportAudio[i][1]);
+			sb.append(":");
+			sb.append(current);
+			sb.append(":");
+			sb.append(max);
+			sb.append("+");
+		}
+		
+		if(sb.length() > 1)
+			sb.deleteCharAt(sb.length() - 1);
+		return sb.toString();
 	}
 
-	public void updataContactData(String newName, String number) {
+	public boolean updataContactData(String value) {
+		boolean result = true;
+		/*
 		int id = 1;
 		String phone = "2222";
 		String name = "www";
-		Uri dataUri = Uri.parse("content://com.android.contacts/data");//¶Ôdata±íµÄËùÓĞÊı¾İ²Ù×÷
+		Uri dataUri = Uri.parse("content://com.android.contacts/data");//ï¿½ï¿½dataï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ²ï¿½ï¿½ï¿½
 		ContentValues phoneValues = new ContentValues();
 		phoneValues.put("data1", phone);
 		mContentResolver.update(dataUri, phoneValues, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/phone_v2",id+""});
 		ContentValues nameValue = new ContentValues();
 		nameValue.put("data1", name);
 		mContentResolver.update(dataUri, nameValue, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/name",id+""});
+		*/
+		return result;
 	}
 	
 	public void getContactList() {
-		Uri uri = Uri.parse("content://com.android.contacts/contacts"); //·ÃÎÊraw_contacts±í
+		Uri uri = Uri.parse("content://com.android.contacts/contacts"); //ï¿½ï¿½ï¿½ï¿½raw_contactsï¿½ï¿½
 		Cursor cursorContact = mContentResolver.query(uri, new String[]{Data._ID}, null, null, null);  
 		ArrayList<String> mContactList = new ArrayList<String>();
 		
 		while(cursorContact.moveToNext()){
 			ContactBean contactBean = new ContactBean();
-			//»ñµÃid²¢ÇÒÔÚdataÖĞÑ°ÕÒÊı¾İ 
 			int id = cursorContact.getInt(0);
 			contactBean.setId(id);
 			//				buf.append("id="+id);
 			uri = Uri.parse("content://com.android.contacts/contacts/"+id+"/data");
-			//data1´æ´¢¸÷¸ö¼ÇÂ¼µÄ×ÜÊı¾İ£¬mimetype´æ·Å¼ÇÂ¼µÄÀàĞÍ£¬Èçµç»°¡¢emailµÈ
 			Cursor cursorData = mContentResolver.query(uri, new String[]{Data.DATA1,Data.MIMETYPE}, null,null, null); 
 			while(cursorData.moveToNext()){
 				String data = cursorData.getString(cursorData.getColumnIndex("data1"));
-				if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/name")){       //Èç¹ûÊÇÃû×Ö
+				if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/name")){       //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					contactBean.setName(data);
 
-				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/phone_v2")){  //Èç¹ûÊÇµç»°
+				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/phone_v2")){  //ï¿½ï¿½ï¿½ï¿½Çµç»°
 					//						buf.append(",phone="+data);
 					contactBean.setPhoneNum(data);
-				}/*else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/email_v2")){  //Èç¹ûÊÇemail
+				}/*else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/email_v2")){  //ï¿½ï¿½ï¿½ï¿½ï¿½email
 
-				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/postal-address_v2")){ //Èç¹ûÊÇµØÖ·
+				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/postal-address_v2")){ //ï¿½ï¿½ï¿½ï¿½Çµï¿½Ö·
 
-				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/organization")){  //Èç¹ûÊÇ×éÖ¯
+				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/organization")){  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¯
 
 				}*/
 
@@ -172,7 +240,6 @@ public class DeviceSetting {
 		}
 	}
 	
-	//Ğ¡ÓÚ10µÄÊı×Ö¼Ó0
 	private String getStr(int value) {
 		String valueStr;
 		if(value<10){
@@ -181,5 +248,33 @@ public class DeviceSetting {
 			valueStr = String.valueOf(value);
 		}
 		return valueStr;
+	}
+	
+	public String getDeviceName() {
+		return DataPackDevice.DEVICE_NAME;
+	}
+	
+	//è·å–ipåœ°å€
+	public static String getLocalIpAddress() {
+		try {
+			for (Enumeration<NetworkInterface> en = NetworkInterface
+					.getNetworkInterfaces(); en.hasMoreElements();) {
+				NetworkInterface intf = en.nextElement();
+				for (Enumeration<InetAddress> enumIpAddr = intf
+						.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+					InetAddress inetAddress = enumIpAddr.nextElement();
+					
+					if(inetAddress instanceof Inet6Address)
+						continue;
+					
+					if (!inetAddress.isLoopbackAddress()) {
+						return inetAddress.getHostAddress().toString();
+					}
+				}
+			}
+		} catch (SocketException ex) {
+			Log.i(TAG, "WifiPreference IpAddress-" + ex.toString());
+		}
+		return null;
 	}
 }

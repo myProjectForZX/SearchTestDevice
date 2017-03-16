@@ -15,14 +15,13 @@ import java.net.SocketTimeoutException;
 import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 /**
- * 设备等待搜索类
  */
 public abstract class DeviceWaitingSearch extends Thread {
     private final String TAG = "DeviceWaitingSearch";
  
     private static final int DEVICE_FIND_PORT = 9000;
-    private static final int RECEIVE_TIME_OUT = 5000; // 接收超时时间，应小于等于主机的超时时间1500
-    private static final int TOTAL_RECEIVE_TIME_OUT = 10 * 60 * 1000; //总的等待时间 10分钟
+    private static final int RECEIVE_TIME_OUT = 5000; 
+    private static final int TOTAL_RECEIVE_TIME_OUT = 10 * 60 * 1000; 
     private Context mContext;
     private String mDeviceName;
     private Handler mHandler;
@@ -41,12 +40,10 @@ public abstract class DeviceWaitingSearch extends Thread {
             byte[] data = new byte[4096];
             DatagramPacket pack = new DatagramPacket(data, data.length);
             while (true) {
-                // 等待主机的搜索
-            	socket.setSoTimeout(TOTAL_RECEIVE_TIME_OUT); // 连接超时还原成无穷大，阻塞式接收
+            	socket.setSoTimeout(TOTAL_RECEIVE_TIME_OUT); 
                 socket.receive(pack);
                 Log.i(TAG, "-------> receive req package");
                 if (DataPackDevice.parseDatagramPacket(pack, DataPackDevice.PACKET_TYPE_FIND_HOST_REQ, mHandler)) {
-                	//第一次反馈一个回应包 表示设备端接收到发送过来的请求  host端接收到后发送密码过来即可。
                 	Log.i(TAG, "-------> receive req package right");
                     byte[] sendData = DataPackDevice.packData(DataPackDevice.PACKET_TYPE_FIND_DEVICE_RSP, null, null);   
                     DatagramPacket sendPack = new DatagramPacket(sendData, sendData.length, pack.getAddress(), pack.getPort());
@@ -95,7 +92,7 @@ public abstract class DeviceWaitingSearch extends Thread {
         	
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             if (socket != null) {
                 socket.close();
             }
@@ -103,7 +100,6 @@ public abstract class DeviceWaitingSearch extends Thread {
     }
  
     /**
-     * 当设备被发现时执行
      */
     public abstract void onDeviceSearched(InetSocketAddress socketAddr);
 }

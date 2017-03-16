@@ -25,19 +25,13 @@ public class DataPackDevice {
 	private static final String TAG = "DataPack";
 	public static final byte DATA_HEAD = 0x51;
 	
-	//HOST ÎªÊÖ³Ö¶Ë
-	//DEVICE  ÎªÉè±¸¶Ë
-	//½¨Á¢Á¬½ÓÁ÷³Ì
-	//1. HOST¶Ë·¢ËÍÒ»¸öËÑË÷ÇëÇó
-	//2. DEVICE·´À¡Ò»¸öÏìÓ¦°ü£¬  HOST¶Ë½ÓÊÕµ½ÏìÓ¦°üÖ®ºó ÐèÒª·¢ËÍÒ»¸öÃÜÂëµ½DEVICE¶Ë
-	//3. DEVICEÔÚÈ·ÈÏÖ®ºó¾Í¿ÉÒÔ½¨Á¢Õý³£·¢ËÍÊý¾ÝÁ¬½Ó¡£
-    public static final byte PACKET_TYPE_FIND_HOST_REQ = 0x10; // ËÑË÷ÇëÇó
-    public static final byte PACKET_TYPE_FIND_DEVICE_RSP = 0x11; // ËÑË÷ÏìÓ¦
-    public static final byte PACKET_TYPE_FIND_HOST_CHK = 0x12; // ËÑË÷È·ÈÏ
-    public static final byte PACKET_TYPE_FIND_DEVICE_CHK = 0x13; // ËÑË÷È·ÈÏ
-    public static final byte PACKET_TYPE_FIND_HOST_CHK_2 = 0x14; // ËÑË÷×îÖÕÈ·ÈÏ
+    public static final byte PACKET_TYPE_FIND_HOST_REQ = 0x10; 
+    public static final byte PACKET_TYPE_FIND_DEVICE_RSP = 0x11; 
+    public static final byte PACKET_TYPE_FIND_HOST_CHK = 0x12; 
+    public static final byte PACKET_TYPE_FIND_DEVICE_CHK = 0x13; 
+    public static final byte PACKET_TYPE_FIND_HOST_CHK_2 = 0x14; 
     
-    public static final byte PACKET_TYPE_SEND_RECV_DATA  = 0x15; // ·¢ËÍºÍ½ÓÊÕÊý¾Ý
+    public static final byte PACKET_TYPE_SEND_RECV_DATA  = 0x15; 
  
     public static final byte PACKET_DATA_TYPE_DEVICE_PASS = 0x20;
     public static final byte PACKET_DATA_TYPE_DEVICE_RESULT = 0x21;
@@ -48,22 +42,24 @@ public class DataPackDevice {
     public static final byte PACKET_DATA_TYPE_DEVICE_AUDI = 0x26;
     public static final byte PACKET_DATA_TYPE_DEVICE_CONT = 0x27;
     public static final byte PACKET_DATA_TYPE_DEVICE_ALL  = 0x28;
+    public static final byte PACKET_DATA_TYPE_DEVICE_SETIING_RESULT  = 0x29;
+    public static final byte PACKET_DATA_TYPE_DEVICE_QUIT = 0x30;
     
     public static final String PACKET_CHK_RESULT_OK = "OK";
-    public static final String PACKET_CHK_RESULT_BAD = "BAD";
+    public static final String PACKET_CHK_RESULT_BAD = "FAIL";
     
     public static final String DEVICE_PASSWORD = "123456";
-    public static final String DEVICE_NAME     = "ÖÐÑëÉè±¸";
+    public static final String DEVICE_NAME     = "ä¸­å¤®è®¾å¤‡";
     
-    //ÔÚÁ´½Ó½¨Á¢µÄ¹ý³ÌÖÐ
     public static final int DEVICE_FIND = 0;
     public static final int DEVICE_CONNECTED = 1;
     public static final int DEVICE_NOT_CONNECTED = 2;
+    
 	/**
-     * ´ò°üÏìÓ¦±¨ÎÄ
-     * Ð­Òé£ºDATA_HEAD + packType(1) + data(n)
-     *  data: ÓÉn×éÊý¾Ý£¬Ã¿×éµÄ×é³É½á¹¹type(1) + length(4) + data(length)
-     *  dataType Êý×éºÍ dataContentÊý×éÊý¾ÝÒªÒ»Ò»¶ÔÓ¦¡£
+     * æ•°æ®ç±»åž‹
+     * æ•°æ®å¤´ DATA_HEAD + packType(1) + data(n)
+     *  data: dataType(1) + length(4) + data(length)
+     *  dataType å’Œ dataContentè¦ä¸€ä¸€å¯¹åº”
      */
     public static byte[] packData(byte packType, byte[] dataType, String[] dataContent) {
         byte[] data = new byte[4096];
@@ -91,9 +87,9 @@ public class DataPackDevice {
     }
     
     /**
-     * ½âÎö±¨ÎÄ
-     * Ð­Òé£ºDATA_HEAD + packType(1) + data(n)
-     *  data: ÓÉn×éÊý¾Ý£¬Ã¿×éµÄ×é³É½á¹¹type(1) + length(4) + data(length)
+     * æ•°æ®ç±»åž‹
+     * æ•°æ®å¤´ DATA_HEAD + packType(1) + data(n)
+     *  data: dataType(1) + length(4) + data(length)
      */
     private static boolean parsePack(byte data[], int dataOffSet, byte needCheckPackType, Handler handler) {
     	boolean result = false;
@@ -126,7 +122,6 @@ public class DataPackDevice {
 		switch (packType) {
 		case PACKET_TYPE_FIND_HOST_REQ:
 			// host
-			// Èç¹ûÊÇ½ÓÊÕµ½ËÑË÷ÇëÇó±êÖ¾Î» È·ÈÏÊÇ·ñÊÇÓÐÐ§ÇëÇó
 			result = true;
 			Log.e(TAG, "----------------------> PACKET_TYPE_FIND_HOST_REQ");
 			break;
@@ -200,6 +195,9 @@ public class DataPackDevice {
 					case PACKET_DATA_TYPE_DEVICE_ALL:
 						msg.arg1 = PACKET_DATA_TYPE_DEVICE_ALL;
 						break;
+					case PACKET_DATA_TYPE_DEVICE_QUIT:
+						result = true;
+						break;
 					default:
 						isDefault = true;
 						break;
@@ -237,12 +235,12 @@ public class DataPackDevice {
         return retVal;
     }
  
-    //ÓÃÓÚudpÊý¾Ý°ü½âÎö
+    //è§£æžudpæ•°æ®
     public static boolean parseDatagramPacket(DatagramPacket dataPacket, byte needCheckPackType, Handler handler) {
     	return parsePack(dataPacket.getData(), dataPacket.getOffset(), needCheckPackType, handler);
     }
     
-    //ÓÃÓÚtcpÊý¾Ý°ü½âÎö
+    //è§£æžsocketæ•°æ®
     public static boolean parseServiceSocktPackage(byte[] data, Handler handler) {
     	return parsePack(data, 0, DataPackDevice.PACKET_TYPE_SEND_RECV_DATA, handler);
     }
@@ -264,7 +262,7 @@ public class DataPackDevice {
 	}
 
     /**
-     * »ñÈ¡±¾»úÔÚWifiÖÐµÄIP
+     *èŽ·å– wifi ip
      */
     private String getOwnWifiIP(Context context) {
         WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
@@ -272,16 +270,15 @@ public class DataPackDevice {
             return "";
         }
  
-        // Ðè¼ÓÈ¨ÏÞ£ºandroid.permission.ACCESS_WIFI_STATE
         WifiInfo wifiInfo = wm.getConnectionInfo();
         int ipInt = wifiInfo.getIpAddress();
         String ipAddr = int2Ip(ipInt);
-        Log.i(TAG, "device-@@@zjun: ±¾»úIP=" + ipAddr);
+        Log.i(TAG, "getOwnWifiIP =" + ipAddr);
         return int2Ip(ipInt);
     }
  
     /**
-     * °Ñint±íÊ¾µÄip×ª»»³É×Ö·û´®ip
+     * è£…æ¢IPåœ°å€
      */
     private String int2Ip(int i) {
         return String.format("%d.%d.%d.%d", i & 0xFF, (i >> 8) & 0xFF, (i >> 16) & 0xFF, (i >> 24) & 0xFF);
