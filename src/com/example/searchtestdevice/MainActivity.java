@@ -25,8 +25,6 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 	private static final String TAG = "mainDevice";
 	private Button waitSearchButton;
 	private Context mContext;
-	private ContentResolver mContentResolver;
-	private ArrayList mContactList;
 	private DeviceWaitingSearch deviceWaitingSearch;
 	private Handler mHandler = new MyHander();
 	private String mHostIp;  
@@ -37,9 +35,9 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		mContext = getApplicationContext();
-		mContentResolver=mContext.getContentResolver();
 		mDeviceSetting = new DeviceSetting(getApplicationContext());
 		
+		mDeviceSetting.getLanguage();
 		initView();
 	}
 	
@@ -86,6 +84,11 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 			super.handleMessage(msg);
 			
 			switch (msg.what) {
+			case DataPackDevice.PACKET_DATA_TYPE_DEVICE_QUIT:
+				deviceWaitingSearch = null;
+				waitSearchButton.setEnabled(true);
+				break;
+				
 			case DataPackDevice.DEVICE_FIND:
 				if(msg.arg1 == DataPackDevice.DEVICE_CONNECTED) {
 					//if connect with host, close deviceWaitSearch
@@ -98,6 +101,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 					new DeviceRecvDataThread(mHandler, mHostIp, mDeviceSetting).start();
 				} else if (msg.arg1 == DataPackDevice.DEVICE_NOT_CONNECTED){
 					Toast.makeText(getApplicationContext(), getResources().getString(R.string.connect_failed), Toast.LENGTH_SHORT).show();
+					deviceWaitingSearch = null;
+					waitSearchButton.setEnabled(false);
 				}
 				break;
 				
@@ -138,13 +143,14 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 						break;
 						
 					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_CONT:
-						result = mDeviceSetting.updataContactData(value);
+						result = mDeviceSetting.setContactData(value);
 						break;
 					
 					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_QUIT:
 						deviceWaitingSearch = null;
 						waitSearchButton.setEnabled(true);
-						isDefault = true;
+						dataType = new byte[]{DataPackDevice.PACKET_DATA_TYPE_DEVICE_QUIT};
+						result = true;
 						break;
 
 					default:
@@ -207,7 +213,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
     	dataContent[4] = mDeviceSetting.getEthernetIp();
     	
     	//device contact
-    	dataContent[5] = "empty now";
+    	dataContent[5] = mDeviceSetting.getContactList();
     	
     	new DeviceSendDataThread(mHandler, mHostIp, dataType, dataContent).start();
     }

@@ -196,7 +196,7 @@ public class DataPackDevice {
 						msg.arg1 = PACKET_DATA_TYPE_DEVICE_ALL;
 						break;
 					case PACKET_DATA_TYPE_DEVICE_QUIT:
-						result = true;
+						msg.arg1 = PACKET_DATA_TYPE_DEVICE_QUIT;
 						break;
 					default:
 						isDefault = true;

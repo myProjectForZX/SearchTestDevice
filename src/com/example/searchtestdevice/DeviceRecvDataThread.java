@@ -9,6 +9,7 @@ import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 
 import android.os.Handler;
+import android.provider.ContactsContract.Contacts.Data;
 
 public class DeviceRecvDataThread extends Thread {
 	private final String TAG = "DeviceSendAndRecvDataThread";
@@ -62,6 +63,11 @@ public class DeviceRecvDataThread extends Thread {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			}
+			
+			Log.i(TAG, "---------------------> recv end ");
+			if(mHandler != null) {
+				mHandler.sendEmptyMessage(DataPackDevice.PACKET_DATA_TYPE_DEVICE_QUIT);
 			}
 		}
 	}

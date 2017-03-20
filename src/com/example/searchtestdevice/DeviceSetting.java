@@ -35,10 +35,11 @@ public class DeviceSetting {
 	private Context mContext;
 	private ContentResolver mContentResolver;
 	
+	//实际locale   客户端显示名称   displayname
 	private String[][] supportLanguage = new String[][] {
-		{Locale.SIMPLIFIED_CHINESE.toString(), "简体"},
-		{Locale.TRADITIONAL_CHINESE.toString(), "繁体"},
-		{Locale.ENGLISH.toString(), "英语"}
+		{Locale.SIMPLIFIED_CHINESE.toString(), "简体","中文 (简体)"},
+		{Locale.TRADITIONAL_CHINESE.toString(), "繁体", "中文 (繁体)"},
+		{Locale.ENGLISH.toString(), "英语", "English (United States)"}
 	};
 	
 	private String[][] supportAudio = new String[][] {
@@ -136,6 +137,8 @@ public class DeviceSetting {
 			sb.append(supportLanguage[j][1] + ":");
 		}
 		
+		Log.e(TAG, "------------> label : " + currentLocale.getDisplayName());
+		
 		if(sb.length() > 1)
 			sb.deleteCharAt(sb.length() - 1);
 		return sb.toString();
@@ -150,6 +153,8 @@ public class DeviceSetting {
 		return getLocalIpAddress();
 	}
 	
+	
+	
 	public boolean setVoice(String typeValue) {
 		boolean result = true;
 		Log.i(TAG, "-------------> setVoice");
@@ -159,6 +164,8 @@ public class DeviceSetting {
 		return result;
 	}
 	
+	//voice 数据格式
+	//类型:当前音量大小:最大音量大小+....
 	public String getVoice(int streamType) {
 		String result = null;
 		Log.i(TAG, "-------------> getVoice");
@@ -184,7 +191,7 @@ public class DeviceSetting {
 		return sb.toString();
 	}
 
-	public boolean updataContactData(String value) {
+	public boolean setContactData(String value) {
 		boolean result = true;
 		/*
 		int id = 1;
@@ -201,36 +208,37 @@ public class DeviceSetting {
 		return result;
 	}
 	
-	public void getContactList() {
-		Uri uri = Uri.parse("content://com.android.contacts/contacts"); //����raw_contacts��
+	//数据结构
+	//ID:NAME:NUMBER+ID:NAME:NUMBER...
+	public String getContactList() {
+		StringBuffer sb = new StringBuffer();
+		
+		Uri uri = Uri.parse("content://com.android.contacts/contacts");
 		Cursor cursorContact = mContentResolver.query(uri, new String[]{Data._ID}, null, null, null);  
-		ArrayList<String> mContactList = new ArrayList<String>();
 		
 		while(cursorContact.moveToNext()){
 			ContactBean contactBean = new ContactBean();
 			int id = cursorContact.getInt(0);
 			contactBean.setId(id);
-			//				buf.append("id="+id);
+
 			uri = Uri.parse("content://com.android.contacts/contacts/"+id+"/data");
 			Cursor cursorData = mContentResolver.query(uri, new String[]{Data.DATA1,Data.MIMETYPE}, null,null, null); 
 			while(cursorData.moveToNext()){
 				String data = cursorData.getString(cursorData.getColumnIndex("data1"));
-				if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/name")){       //���������
+				if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/name")){
 					contactBean.setName(data);
-
-				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/phone_v2")){  //����ǵ绰
-					//						buf.append(",phone="+data);
+				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/phone_v2")){
 					contactBean.setPhoneNum(data);
-				}/*else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/email_v2")){  //�����email
-
-				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/postal-address_v2")){ //����ǵ�ַ
-
-				}else if(cursorData.getString(cursorData.getColumnIndex("mimetype")).equals("vnd.android.cursor.item/organization")){  //�������֯
-
-				}*/
-
+				}
 			}
-			//mContactList.add(contactBean);
+			
+			sb.append(id);
+			sb.append(":");
+			sb.append(contactBean.getName());
+			sb.append(":");
+			sb.append(contactBean.getPhoneNum());
+			sb.append("+");
+			
 			if(cursorData!=null){
 				cursorData.close();
 			}
@@ -238,6 +246,12 @@ public class DeviceSetting {
 		if(cursorContact!=null){
 			cursorContact.close();
 		}
+		
+		if(sb.length()>1) {
+			sb.deleteCharAt(sb.length() - 1);
+		}
+		
+		return sb.toString();
 	}
 	
 	private String getStr(int value) {
