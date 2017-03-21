@@ -15,6 +15,6 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:text="打开搜索" />
+        android:text="@string/please_open_search" />
 
 </RelativeLayout>

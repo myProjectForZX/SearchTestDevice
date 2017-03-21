@@ -1,14 +1,11 @@
 package com.example.searchtestdevice;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 
 import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 
-
-import android.support.v7.app.ActionBarActivity;
-import android.content.ContentResolver;
+import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -21,7 +18,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 
-public class MainActivity extends ActionBarActivity implements OnClickListener {
+public class MainActivity extends Activity implements OnClickListener {
 	private static final String TAG = "mainDevice";
 	private Button waitSearchButton;
 	private Context mContext;
@@ -37,7 +34,6 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		mContext = getApplicationContext();
 		mDeviceSetting = new DeviceSetting(getApplicationContext());
 		
-		mDeviceSetting.getLanguage();
 		initView();
 	}
 	
@@ -64,7 +60,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 		if(deviceWaitingSearch != null)
 			return;
 		
-		deviceWaitingSearch = new DeviceWaitingSearch(this, mHandler, "�����豸"){
+		deviceWaitingSearch = new DeviceWaitingSearch(mContext, mHandler, DataPackDevice.DEVICE_NAME){
 			@Override
 			public void onDeviceSearched(InetSocketAddress socketAddr) {
 				mHostIp = socketAddr.getAddress().getHostAddress();
@@ -122,7 +118,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 					
 					switch (msg.arg1) {
 					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_LANG:
-						result = mDeviceSetting.setSystemTime(value);
+						result = mDeviceSetting.setLanguage(value);
 						break;
 						
 					case DataPackDevice.PACKET_DATA_TYPE_DEVICE_AUDI:

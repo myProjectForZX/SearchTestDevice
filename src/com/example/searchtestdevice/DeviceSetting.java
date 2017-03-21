@@ -1,34 +1,26 @@
 package com.example.searchtestdevice;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import com.example.searchtestdevice.data.ContactBean;
 import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 
-import android.R.integer;
+import com.android.internal.app.LocalePicker;
+import android.app.AlarmManager;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.provider.ContactsContract.Contacts.Data;
-import android.util.DisplayMetrics;
-import android.widget.Toast;
 
 public class DeviceSetting {
 	private static final String TAG = "deviceSetting";
@@ -42,6 +34,12 @@ public class DeviceSetting {
 		{Locale.ENGLISH.toString(), "英语", "English (United States)"}
 	};
 	
+	private Locale[] supportLocales = new Locale[] {
+			Locale.SIMPLIFIED_CHINESE,
+			Locale.TRADITIONAL_CHINESE,
+			Locale.US
+	};
+	
 	private String[][] supportAudio = new String[][] {
 		{String.valueOf(AudioManager.STREAM_SYSTEM), "系统"},	
 		{String.valueOf(AudioManager.STREAM_ALARM), "闹钟"},
@@ -53,26 +51,50 @@ public class DeviceSetting {
 		mContentResolver = context.getContentResolver();
 	}
 	
+	//时间格式
+	//year-month-day-hour-minute-second
+	//2010-12-12-23-59-59
 	public boolean setSystemTime(String datetimes) {
 		boolean result = true;
-		try {
-			Process process = Runtime.getRuntime().exec("su");
-			String datetime = ""; 
-			datetime = datetimes.toString(); 
-			DataOutputStream os = new DataOutputStream(
-					process.getOutputStream());
-			os.writeBytes("setprop persist.sys.timezone GMT\n");
-			os.writeBytes("/system/bin/date -s " + datetime + "\n");
-			os.writeBytes("clock -w\n");
-			os.writeBytes("exit\n");
-			os.flush();
-		} catch (IOException e) {
-			result = false;
-			Toast.makeText(mContext, "need root", Toast.LENGTH_SHORT).show();
+		if(datetimes == null || datetimes.isEmpty()) {
+			return false;
 		}
+		
+		String[] timeStrings = datetimes.split("-"); 
+		
+		if(timeStrings == null || timeStrings.length != 6)
+			return false;
+		
+		int year = Integer.valueOf(timeStrings[0]);
+		int month = Integer.valueOf(timeStrings[1]);
+		int day = Integer.valueOf(timeStrings[2]);
+		int hour = Integer.valueOf(timeStrings[3]);
+		int minute = Integer.valueOf(timeStrings[4]);
+		int second = Integer.valueOf(timeStrings[5]);
+		
+		Calendar c = Calendar.getInstance();
+		c.set(Calendar.YEAR, year);
+		c.set(Calendar.MONTH, month);
+		c.set(Calendar.DAY_OF_MONTH, day);
+		c.set(Calendar.HOUR_OF_DAY, hour);
+		c.set(Calendar.MINUTE, minute);
+		c.set(Calendar.SECOND, second);
+		
+		Log.e(TAG, "---------- year : " + year + " month : " + month + " day : " + day + " hour : " + hour + " minute : " + minute + " sec : " + second);
+		
+		long when = c.getTimeInMillis();
+		
+		if(when / 1000 < Integer.MAX_VALUE) {
+			//need android system compile
+			((AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE)).setTime(when);
+		}
+		
 		return result;
 	}
 
+	//时间格式
+	//year-month-day-hour-minute-second
+	//2010-12-12-23-59-59
 	public String getSystemTime() {
 		Calendar c = Calendar.getInstance();
 		int year = c.get(Calendar.YEAR);
@@ -83,6 +105,7 @@ public class DeviceSetting {
 		int second = c.get(Calendar.SECOND);
 		StringBuffer sb = new StringBuffer();
 		sb.append(year);
+		sb.append("-");
 		String monthStr = getStr(month);
 		String dayStr = getStr(day);
 		String hourStr = getStr(hour);
@@ -90,24 +113,46 @@ public class DeviceSetting {
 		String secondStr = getStr(second);
 
 		sb.append(monthStr);
+		sb.append("-");
 		sb.append(dayStr);
+		sb.append("-");
 		sb.append(hourStr);
+		sb.append("-");
 		sb.append(minuteStr);
+		sb.append("-");
 		sb.append(secondStr);
 		return sb.toString();
 	}
 
-	public void setLanguage(String language) {
+	private Locale getSettingLocale(String language) {
+		Locale result = null;
+		if(language == null || language.isEmpty())
+			return null;
+		
+		for(int i = 0; i < supportLanguage.length; ++i) {
+			if(language.equals(supportLanguage[i][1])){
+				result = supportLocales[i];
+			}
+		}
+		
+		Log.e(TAG, "------------->getSettingLocale : " + result);
+		return result;
+	}
+	
+	public boolean setLanguage(String language) {
+		boolean result = false;
 		Log.i(TAG, "setLanguage-language="+language);
 		
-		try {
-			Configuration config = mContext.getResources().getConfiguration();
-			DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
-			config.locale = Locale.ENGLISH;
-			mContext.getResources().updateConfiguration(config, dm);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		if(language == null || language.isEmpty())
+			return result;
+		Locale locale = getSettingLocale(language);
+		
+		if(locale != null) {
+			//need android system compile
+			LocalePicker.updateLocale(locale);
+		} else 
+			result = false;
+		return result;
 	}
 	
 	//数据格式
@@ -146,6 +191,7 @@ public class DeviceSetting {
 	
 	public boolean setEthernetIp(String ip) {
 		boolean result = true;
+		Log.e(TAG, "--------------------> setEthernetIp  : " + ip);
 		return result;
 	}
 	
@@ -153,14 +199,30 @@ public class DeviceSetting {
 		return getLocalIpAddress();
 	}
 	
-	
-	
 	public boolean setVoice(String typeValue) {
-		boolean result = true;
-		Log.i(TAG, "-------------> setVoice");
+		boolean result = false;
+		Log.i(TAG, "-------------> setVoice typeValue :  " + typeValue);
+		if(typeValue == null && typeValue.isEmpty()) {
+			return result;
+		}
+		
 		AudioManager mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-
-		//mAudioManager.setStreamVolume(streamType, streamValue, AudioManager.FLAG_PLAY_SOUND | AudioManager.FLAG_SHOW_UI);
+		int type = -1;
+		int value = -1;
+		
+		String[] valueStrings = typeValue.split(":");
+		
+		if(valueStrings != null && valueStrings.length == 2) {
+			for(int i = 0; i < supportAudio.length; ++i) {
+				if(valueStrings[0].equals(supportAudio[i][1])) {
+					type = Integer.valueOf(supportAudio[i][0]);
+					value = Integer.valueOf(valueStrings[1]);
+				}
+			}
+		}
+		
+		Log.e(TAG, "-----------------> type : " + type + " value : " + value);
+		mAudioManager.setStreamVolume(type, value, AudioManager.FLAG_PLAY_SOUND | AudioManager.FLAG_SHOW_UI);
 		return result;
 	}
 	
@@ -191,20 +253,41 @@ public class DeviceSetting {
 		return sb.toString();
 	}
 
+	//联系人格式
+	//ID:名字:号码+ID:名字:号码
 	public boolean setContactData(String value) {
-		boolean result = true;
-		/*
-		int id = 1;
-		String phone = "2222";
-		String name = "www";
-		Uri dataUri = Uri.parse("content://com.android.contacts/data");//��data����������ݲ���
-		ContentValues phoneValues = new ContentValues();
-		phoneValues.put("data1", phone);
-		mContentResolver.update(dataUri, phoneValues, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/phone_v2",id+""});
-		ContentValues nameValue = new ContentValues();
-		nameValue.put("data1", name);
-		mContentResolver.update(dataUri, nameValue, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/name",id+""});
-		*/
+		boolean result = false;
+		Log.e(TAG, "-----------------> value " + value);
+		
+		if(value == null || value.isEmpty())
+			return result;
+		
+		String[] contactNeedChange = value.split("\\+");
+		
+		if(contactNeedChange == null)
+			return result;
+		
+		for(int i = 0; i < contactNeedChange.length; ++i) {
+			String[] contact = contactNeedChange[i].split(":");
+			if(contact == null || contact.length != 3)
+				return false;
+			
+			int id = Integer.valueOf(contact[0]);
+			String name = contact[1];
+			String phoneNumber = contact[2];
+			
+			Log.e(TAG, "--------------> id : " + id + " name : " + name + " phoneNumber : " + phoneNumber);
+			
+			Uri dataUri = Uri.parse("content://com.android.contacts/data");
+			ContentValues phoneValues = new ContentValues();
+			phoneValues.put("data1", phoneNumber);
+			mContentResolver.update(dataUri, phoneValues, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/phone_v2",id+""});
+			
+			//名字暂时先不做修改
+			ContentValues nameValue = new ContentValues();
+			nameValue.put("data1", name);
+			mContentResolver.update(dataUri, nameValue, "mimetype=? and raw_contact_id=?", new String[]{"vnd.android.cursor.item/name",id+""});
+		}
 		return result;
 	}
 	

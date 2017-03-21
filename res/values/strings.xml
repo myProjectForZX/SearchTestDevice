@@ -8,4 +8,5 @@
 	<string name="connect_failed">建立连接失败，请重新连接</string>
 	<string name="udp_connect_success">已有数据进入连接，启动数据发送</string>
 	<string name="please_open_wifi">请连接wifi</string>
+	<string name="please_open_search">打开搜索</string>
 </resources>

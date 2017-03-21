@@ -172,6 +172,7 @@ public class DataPackDevice {
 					boolean isDefault = false;
 					Message msg = new Message();
 					msg.what = PACKET_TYPE_SEND_RECV_DATA;
+					msg.obj  = resultString;
 					
 					switch (dataType) {
 					case PACKET_DATA_TYPE_DEVICE_NAME:
