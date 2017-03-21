@@ -256,16 +256,16 @@ public class DeviceSetting {
 	//联系人格式
 	//ID:名字:号码+ID:名字:号码
 	public boolean setContactData(String value) {
-		boolean result = false;
+		boolean result = true;
 		Log.e(TAG, "-----------------> value " + value);
 		
 		if(value == null || value.isEmpty())
-			return result;
+			return false;
 		
 		String[] contactNeedChange = value.split("\\+");
 		
 		if(contactNeedChange == null)
-			return result;
+			return false;
 		
 		for(int i = 0; i < contactNeedChange.length; ++i) {
 			String[] contact = contactNeedChange[i].split(":");
