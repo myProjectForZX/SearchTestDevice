@@ -13,6 +13,12 @@ import com.example.searchtestdevice.data.DataPackDevice;
 import com.example.searchtestdevice.data.Log;
 
 import com.android.internal.app.LocalePicker;
+import android.net.ethernet.IEthernetManager;
+import android.net.ethernet.EthernetManager;
+import android.net.ethernet.EthernetDevInfo;
+import android.net.NetworkInfo;                                                                                                              
+import android.net.NetworkInfo.DetailedState;
+import android.net.ConnectivityManager;
 import android.app.AlarmManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -20,12 +26,19 @@ import android.content.Context;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.provider.ContactsContract.Contacts.Data;
+
+import static android.net.ethernet.EthernetManager.ETHERNET_STATE_DISABLED;
+import static android.net.ethernet.EthernetManager.ETHERNET_STATE_ENABLED;
 
 public class DeviceSetting {
 	private static final String TAG = "deviceSetting";
 	private Context mContext;
 	private ContentResolver mContentResolver;
+	private EthernetManager mEthManager;
+	private ConnectivityManager mService;
+	EthernetDevInfo newInfo;
 	
 	//实际locale   客户端显示名称   displayname
 	private String[][] supportLanguage = new String[][] {
@@ -49,6 +62,8 @@ public class DeviceSetting {
 	public DeviceSetting(Context context) {
 		mContext = context;
 		mContentResolver = context.getContentResolver();
+		mEthManager = EthernetManager.getInstance();
+		mService = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
 	
 	//时间格式
@@ -189,14 +204,96 @@ public class DeviceSetting {
 		return sb.toString();
 	}
 	
-	public boolean setEthernetIp(String ip) {
+	public boolean setEthernetIp(String newIp) {
 		boolean result = true;
-		Log.e(TAG, "--------------------> setEthernetIp  : " + ip);
+		Log.e(TAG, "--------------------> setEthernetIp  : " + newIp);
+		//首先获取保存的信息。
+		if(mEthManager == null)
+			return false;
+		
+		if(newIp == null || newIp.isEmpty())
+			return false;
+		
+		EthernetDevInfo saveInfo = mEthManager.getSavedConfig();
+		String orignalIp = saveInfo.getIpAddress();
+		String orignalNetMask = saveInfo.getNetMask();
+		String orignalGateWay = saveInfo.getGateWay();
+		String orignalDns     = saveInfo.getDnsAddr();
+		
+		
+		newInfo = new EthernetDevInfo();
+		newInfo.setConnectMode(EthernetDevInfo.ETHERNET_CONN_MODE_MANUAL);
+		newInfo.setIpAddress(newIp);
+		newInfo.setNetMask(orignalNetMask);
+		newInfo.setGateWay(orignalGateWay);
+		newInfo.setDnsAddr(orignalDns);
+		
+		
+		new AsyncTask<Void, Void, Void>() {
+            protected void onPreExecute() {
+                //Disable button          
+            }
+
+            @Override
+            protected Void doInBackground(Void... unused) {
+                try{
+                	Log.e(TAG, "-------------------> update dev info ");
+                	mEthManager.updateDevInfo(newInfo);
+                    Thread.sleep(500);
+                } catch(Exception e) {
+                }
+                return null;
+            }                                                                                                                            
+
+            protected void onProgressUpdate(Void... unused) {
+            }        
+
+            protected void onPostExecute(Void unused) {
+            }
+        }.execute();
+		
 		return result;
 	}
 	
 	public String getEthernetIp() {
-		return getLocalIpAddress();
+		String result = "";
+		
+		if(mEthManager == null)
+			return "empty";
+		
+		EthernetDevInfo saveInfo = mEthManager.getSavedConfig();
+		
+		if(saveInfo == null)
+			return "";
+		
+		return saveInfo.getIpAddress();
+	}
+	
+	
+	// true ---> connect
+	// false --> disconnect
+	public boolean getEthernetStatus() {
+		boolean isConnected = false;
+		
+		if(mEthManager == null)
+			return false;
+		
+		if(mService != null && (mEthManager.getState() == EthernetManager.ETHERNET_STATE_ENABLED)) {
+            NetworkInfo networkinfo = mService.getNetworkInfo(ConnectivityManager.TYPE_ETHERNET);
+            isConnected = networkinfo.isConnected();
+		}
+		
+		//如果连接 且是静态连接才可以
+		if(isConnected) {
+			EthernetDevInfo saveInfo = mEthManager.getSavedConfig();
+			
+			if(saveInfo.getConnectMode() == EthernetDevInfo.ETHERNET_CONN_MODE_MANUAL) {
+				isConnected = true;
+			} else {
+				isConnected = false;
+			}
+		}
+		return isConnected;
 	}
 	
 	public boolean setVoice(String typeValue) {

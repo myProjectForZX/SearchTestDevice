@@ -12,6 +12,7 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -46,13 +47,24 @@ public class MainActivity extends Activity implements OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.bt_device:
-			if(checkWifiStatus(getApplicationContext()))
+			if(mDeviceSetting != null && mDeviceSetting.getEthernetStatus())
 				setSearch();
 			break;
 
 		default:
 			break;
 		}
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// TODO Auto-generated method stub
+		
+		if(keyCode == KeyEvent.KEYCODE_F10) {
+			if(mDeviceSetting != null && mDeviceSetting.getEthernetStatus())
+				setSearch();
+		}
+		return super.onKeyDown(keyCode, event);
 	}
 
 	private void setSearch() {
